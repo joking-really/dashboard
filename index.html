@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Google Agent Dashboard — Manage your Gmail and Google Calendar with an AI-powered Groq assistant. Send emails, create events, upload files, and more.">
+  <title>Google Agent Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+  <div id="app">
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- ============ Sidebar ============ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="brand-icon">🤖</div>
+          <div>
+            <h1>Google Agent</h1>
+            <div class="brand-subtitle">Groq AI · Voice · Files</div>
+          </div>
+        </div>
+        <div class="connection-status" id="connection-status" title="Click to test connection">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Not connected</span>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab active" data-tab="actions" id="tab-actions">⚡ Actions</button>
+        <button class="sidebar-tab" data-tab="history" id="tab-history">📋 History</button>
+      </div>
+
+      <!-- Panel: Quick Actions -->
+      <div class="sidebar-panel active" id="panel-actions">
+        <div class="quick-action-group">
+          <h3>📧 Email</h3>
+          <div class="quick-actions">
+            <button class="quick-action-btn" data-prompt="Show me my latest 5 emails" id="qa-recent-emails">
+              <span class="action-icon email">📥</span>
+              <span class="action-text">
+                <span class="action-label">Recent Emails</span>
+                <span class="action-desc">Fetch your latest messages</span>
+              </span>
+            </button>
+            <button class="quick-action-btn" data-prompt="Compose a professional email" id="qa-compose-email">
+              <span class="action-icon email">✉️</span>
+              <span class="action-text">
+                <span class="action-label">Compose Email</span>
+                <span class="action-desc">Write and send a new email</span>
+              </span>
+            </button>
+            <button class="quick-action-btn" data-prompt="Create a draft email" id="qa-draft">
+              <span class="action-icon draft">📝</span>
+              <span class="action-text">
+                <span class="action-label">Create Draft</span>
+                <span class="action-desc">Save as draft for later</span>
+              </span>
+            </button>
+            <button class="quick-action-btn" data-prompt="Show me all my email labels" id="qa-labels">
+              <span class="action-icon label">🏷️</span>
+              <span class="action-text">
+                <span class="action-label">View Labels</span>
+                <span class="action-desc">List all email labels</span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div class="quick-action-group">
+          <h3>📅 Calendar</h3>
+          <div class="quick-actions">
+            <button class="quick-action-btn" data-prompt="What events do I have today?" id="qa-today-events">
+              <span class="action-icon calendar">📆</span>
+              <span class="action-text">
+                <span class="action-label">Today's Events</span>
+                <span class="action-desc">Check your schedule</span>
+              </span>
+            </button>
+            <button class="quick-action-btn" data-prompt="Show my events for this week" id="qa-week-events">
+              <span class="action-icon calendar">🗓️</span>
+              <span class="action-text">
+                <span class="action-label">This Week</span>
+                <span class="action-desc">View upcoming events</span>
+              </span>
+            </button>
+            <button class="quick-action-btn" data-prompt="Create a new calendar event" id="qa-create-event">
+              <span class="action-icon calendar">➕</span>
+              <span class="action-text">
+                <span class="action-label">New Event</span>
+                <span class="action-desc">Schedule a meeting or event</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: History -->
+      <div class="sidebar-panel" id="panel-history">
+        <div class="history-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search conversations..." id="history-search-input">
+        </div>
+        <div id="history-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+
+      <!-- Footer -->
+      <div class="sidebar-footer">
+        <button class="new-chat-btn" id="new-chat-btn">
+          <span>✨</span> New Conversation
+        </button>
+      </div>
+    </aside>
+
+    <!-- ============ Main Content ============ -->
+    <main class="main-content">
+      <!-- Chat Header -->
+      <header class="chat-header">
+        <div class="chat-header-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+          <div>
+            <div class="chat-title" id="chat-title">New Conversation</div>
+            <div class="chat-subtitle" id="chat-subtitle">Gmail & Calendar · Groq AI</div>
+          </div>
+        </div>
+        <div class="chat-header-right">
+          <button class="header-action-btn" id="export-btn" title="Export conversation">📤</button>
+          <button class="header-action-btn" id="clear-chat-btn" title="Clear current chat">🗑️</button>
+        </div>
+      </header>
+
+      <!-- Messages -->
+      <div class="messages-container" id="messages-container">
+        <!-- Welcome Screen -->
+        <div class="welcome-screen" id="welcome-screen">
+          <div class="welcome-icon">🤖</div>
+          <h2 class="welcome-title">Google Agent Dashboard</h2>
+          <p class="welcome-subtitle">
+            Your AI workspace assistant powered by Groq.
+            Manage emails, schedule events, dictate with voice, and upload files — all from one place.
+          </p>
+          <div class="welcome-suggestions">
+            <div class="suggestion-card" data-prompt="Show me my latest emails">
+              <div class="suggestion-icon">📧</div>
+              <div class="suggestion-text">Check my recent emails</div>
+            </div>
+            <div class="suggestion-card" data-prompt="What's on my calendar today?">
+              <div class="suggestion-icon">📅</div>
+              <div class="suggestion-text">What's on my schedule today?</div>
+            </div>
+            <div class="suggestion-card" data-prompt="Send an email to my team about the project update">
+              <div class="suggestion-icon">✉️</div>
+              <div class="suggestion-text">Compose a team update email</div>
+            </div>
+            <div class="suggestion-card" data-prompt="Schedule a meeting for tomorrow at 3pm">
+              <div class="suggestion-icon">📆</div>
+              <div class="suggestion-text">Schedule a meeting</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <!-- File Preview (shown when a file is attached) -->
+        <div class="file-preview" id="file-preview" style="display: none;">
+          <div class="file-preview-card" id="file-preview-card">
+            <div class="file-preview-icon" id="file-preview-icon">📎</div>
+            <div class="file-preview-info">
+              <div class="file-preview-name" id="file-preview-name">file.txt</div>
+              <div class="file-preview-meta" id="file-preview-meta">text/plain · 2.4 KB</div>
+            </div>
+            <button class="file-remove-btn" id="file-remove-btn" title="Remove file">✕</button>
+          </div>
+          <img class="file-preview-image" id="file-preview-image" alt="Preview" style="display: none;">
+        </div>
+
+        <!-- Recording Overlay (shown while recording) -->
+        <div class="recording-overlay" id="recording-overlay" style="display: none;">
+          <div class="recording-pulse"></div>
+          <span class="recording-label">🎙️ Recording...</span>
+          <span class="recording-timer" id="recording-timer">0:00</span>
+          <button class="recording-stop-btn" id="recording-stop-btn" title="Stop and send">⏹ Stop</button>
+          <button class="recording-cancel-btn" id="recording-cancel-btn" title="Cancel recording">✕</button>
+        </div>
+
+        <div class="input-wrapper">
+          <input type="file" id="file-input" accept="audio/*,image/*,.pdf,.txt,.json,.csv,.xml,.doc,.docx" style="display: none;">
+          <button class="attach-btn" id="attach-btn" title="Attach file (audio, image, document)">
+            <span>📎</span>
+          </button>
+          <button class="mic-btn" id="mic-btn" title="Record voice message">
+            <span>🎤</span>
+          </button>
+          <div class="input-field-wrapper">
+            <textarea id="message-input" placeholder="Type a message, or use voice/file..." rows="1"></textarea>
+          </div>
+          <button class="send-btn" id="send-btn" title="Send message" disabled>
+            <span>➤</span>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
