@@ -54,6 +54,7 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -85,7 +86,7 @@ body::before {
 ::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.5); }
 
 /* --- App Layout --- */
-#app { display: flex; height: 100vh; position: relative; z-index: 1; }
+#app { display: flex; height: 100vh; height: 100dvh; position: relative; z-index: 1; }
 
 /* ============================================
    Sidebar
@@ -322,7 +323,7 @@ body::before {
 
 /* Chat Header */
 .chat-header {
-  padding: 16px 24px;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 24px 16px;
   border-bottom: 1px solid var(--border-subtle);
   background: rgba(17, 17, 39, 0.8);
   backdrop-filter: blur(20px);
@@ -507,7 +508,7 @@ body::before {
    Input Area + File Upload
    ============================================ */
 .input-area {
-  padding: 16px 24px 20px;
+  padding: 16px 24px calc(20px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--border-subtle);
   background: rgba(17, 17, 39, 0.8);
   backdrop-filter: blur(20px);
@@ -756,6 +757,6 @@ body::before {
 
 @media (max-width: 480px) {
   .messages-container { padding: 16px; }
-  .input-area { padding: 12px 16px; }
-  .chat-header { padding: 12px 16px; }
+  .input-area { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .chat-header { padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px; }
 }
