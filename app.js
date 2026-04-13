@@ -6,7 +6,7 @@
   'use strict';
 
   // --- Constants ---
-  const WEBHOOK_URL = ''; // TODO: Paste your n8n Production Webhook "URL here https://muneeburrehman3.app.n8n.cloud/webhook/google-agent"
+  const WEBHOOK_URL = 'URL here https://muneeburrehman3.app.n8n.cloud/webhook/google-agent'; // TODO: Paste your n8n Production Webhook "URL here https://muneeburrehman3.app.n8n.cloud/webhook/google-agent"
 
   const STORAGE_KEYS = {
     HISTORY: 'googleAgent_history',
