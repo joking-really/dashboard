@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Google Agent Dashboard — Manage your Gmail and Google Calendar with an AI-powered Groq assistant. Send emails, create events, upload files, and more.">
   <title>Google Agent Dashboard</title>
   <link rel="stylesheet" href="style.css">
@@ -33,7 +33,8 @@
       <!-- Tabs -->
       <div class="sidebar-tabs">
         <button class="sidebar-tab active" data-tab="actions" id="tab-actions">⚡ Actions</button>
-        <button class="sidebar-tab" data-tab="history" id="tab-history">📋 History</button>
+        <button class="sidebar-tab" data-tab="history" id="tab-history">💬 History</button>
+        <button class="sidebar-tab" data-tab="dbhistory" id="tab-dbhistory">🗄️ DB</button>
       </div>
 
       <!-- Panel: Quick Actions -->
@@ -100,7 +101,7 @@
         </div>
       </div>
 
-      <!-- Panel: History -->
+      <!-- Panel: History (local) -->
       <div class="sidebar-panel" id="panel-history">
         <div class="history-search">
           <span class="search-icon">🔍</span>
@@ -108,6 +109,41 @@
         </div>
         <div id="history-list">
           <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Panel: DB History -->
+      <div class="sidebar-panel" id="panel-dbhistory">
+        <!-- Stats Row -->
+        <div class="db-stats-row" id="db-stats-row">
+          <div class="db-stat-card" id="db-stat-total">
+            <div class="db-stat-num">—</div>
+            <div class="db-stat-label">Total</div>
+          </div>
+          <div class="db-stat-card" id="db-stat-today">
+            <div class="db-stat-num">—</div>
+            <div class="db-stat-label">Today</div>
+          </div>
+          <div class="db-stat-card" id="db-stat-type">
+            <div class="db-stat-num">—</div>
+            <div class="db-stat-label">Top Type</div>
+          </div>
+        </div>
+        <!-- Search + Refresh -->
+        <div class="db-toolbar">
+          <div class="db-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Filter history..." id="db-history-search">
+          </div>
+          <button class="db-refresh-btn" id="db-refresh-btn" title="Refresh from database">↻</button>
+        </div>
+        <!-- Card List -->
+        <div id="db-history-list">
+          <div class="db-empty-state" id="db-empty-state">
+            <div class="empty-icon">🗄️</div>
+            <p>Click ↻ to load history</p>
+            <p style="margin-top:4px;font-size:11px;">Data comes from your n8n workflow</p>
+          </div>
         </div>
       </div>
 
