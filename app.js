@@ -6,7 +6,8 @@
   'use strict';
 
   // --- Constants ---
-  const WEBHOOK_URL = 'https://muneeburrehman3.app.n8n.cloud/webhook/google-agent'; // TODO: Paste your n8n Production Webhook "URL here https://muneeburrehman3.app.n8n.cloud/webhook/google-agent"
+  const WEBHOOK_URL = 'https://muneeburrehman3.app.n8n.cloud/webhook/google-agent';
+  const HISTORY_WEBHOOK_URL = 'https://muneeburrehman3.app.n8n.cloud/webhook/google-agent-history';
 
   const STORAGE_KEYS = {
     HISTORY: 'googleAgent_history',
@@ -73,6 +74,13 @@
     recordingTimer: $('#recording-timer'),
     recordingStopBtn: $('#recording-stop-btn'),
     recordingCancelBtn: $('#recording-cancel-btn'),
+    // DB History
+    dbHistoryList: $('#db-history-list'),
+    dbHistorySearch: $('#db-history-search'),
+    dbRefreshBtn: $('#db-refresh-btn'),
+    dbStatTotal: $('#db-stat-total'),
+    dbStatToday: $('#db-stat-today'),
+    dbStatType: $('#db-stat-type'),
   };
 
   // ============================================
@@ -115,7 +123,10 @@
 
     // Sidebar tabs
     DOM.sidebarTabs.forEach((tab) => {
-      tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+      tab.addEventListener('click', () => {
+        switchTab(tab.dataset.tab);
+        if (tab.dataset.tab === 'dbhistory') fetchDbHistory();
+      });
     });
 
     // Quick actions
@@ -177,6 +188,12 @@
     DOM.micBtn.addEventListener('click', toggleRecording);
     DOM.recordingStopBtn.addEventListener('click', stopRecording);
     DOM.recordingCancelBtn.addEventListener('click', cancelRecording);
+
+    // DB History
+    DOM.dbRefreshBtn.addEventListener('click', fetchDbHistory);
+    DOM.dbHistorySearch.addEventListener('input', () => {
+      filterDbHistory(DOM.dbHistorySearch.value);
+    });
   }
 
   // ============================================
@@ -847,6 +864,134 @@
   function switchTab(tabName) {
     DOM.sidebarTabs.forEach((t) => t.classList.toggle('active', t.dataset.tab === tabName));
     DOM.sidebarPanels.forEach((p) => p.classList.toggle('active', p.id === `panel-${tabName}`));
+  }
+
+  // ============================================
+  //  DB History
+  // ============================================
+  let dbHistoryCache = [];
+
+  async function fetchDbHistory() {
+    if (!HISTORY_WEBHOOK_URL) return;
+
+    // Spin the refresh button
+    DOM.dbRefreshBtn.classList.add('spinning');
+    renderDbSkeleton();
+
+    try {
+      const res = await fetch(HISTORY_WEBHOOK_URL, { method: 'GET' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      dbHistoryCache = data.history || [];
+      renderDbStats(data);
+      renderDbHistory(dbHistoryCache);
+    } catch (err) {
+      DOM.dbHistoryList.innerHTML = `
+        <div class="db-error-state">
+          <div class="empty-icon">⚠️</div>
+          <p>Failed to load history</p>
+          <p style="font-size:11px;margin-top:4px;">${escapeHtml(err.message)}</p>
+          <p style="font-size:11px;margin-top:4px;">Make sure your n8n workflow is active.</p>
+        </div>`;
+    } finally {
+      DOM.dbRefreshBtn.classList.remove('spinning');
+    }
+  }
+
+  function renderDbStats(data) {
+    const total = data.total || 0;
+    const todayCount = data.todayCount || 0;
+    const typeCounts = data.typeCounts || {};
+
+    // Find top type
+    const topType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
+    const topTypeLabel = topType ? `${getTypeEmoji(topType[0])} ${topType[0]}` : '—';
+
+    const totalEl = DOM.dbStatTotal.querySelector('.db-stat-num');
+    const todayEl = DOM.dbStatToday.querySelector('.db-stat-num');
+    const typeEl = DOM.dbStatType.querySelector('.db-stat-num');
+
+    if (totalEl) totalEl.textContent = total;
+    if (todayEl) todayEl.textContent = todayCount;
+    if (typeEl) typeEl.textContent = topTypeLabel;
+  }
+
+  function renderDbHistory(entries) {
+    const container = DOM.dbHistoryList;
+    if (!entries || entries.length === 0) {
+      container.innerHTML = `
+        <div class="db-empty-state">
+          <div class="empty-icon">📭</div>
+          <p>No interactions logged yet</p>
+          <p style="font-size:11px;margin-top:4px;">Send a message to start building history</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = entries.map((entry) => {
+      const time = formatDbTime(entry.timestamp);
+      const typeBadge = `<span class="db-type-badge db-type-${entry.inputType || 'text'}">${getTypeEmoji(entry.inputType)} ${entry.inputType || 'text'}</span>`;
+      const userMsg = truncate(entry.userMessage || '(no message)', 80);
+      const aiResp = truncate(entry.aiResponse || '(no response)', 100);
+
+      return `
+        <div class="db-history-card" data-id="${escapeHtml(entry.id || '')}"
+             data-msg="${escapeHtml((entry.userMessage || '').toLowerCase())}"
+             data-resp="${escapeHtml((entry.aiResponse || '').toLowerCase())}">
+          <div class="db-card-header">
+            ${typeBadge}
+            <span class="db-card-time">${time}</span>
+          </div>
+          <div class="db-card-user"><span class="db-role-icon">👤</span> ${escapeHtml(userMsg)}</div>
+          <div class="db-card-ai"><span class="db-role-icon">🤖</span> ${escapeHtml(aiResp)}</div>
+          <div class="db-card-session">Session: ${escapeHtml((entry.sessionId || 'unknown').substring(0, 16))}…</div>
+        </div>`;
+    }).join('');
+  }
+
+  function filterDbHistory(query) {
+    if (!query) {
+      renderDbHistory(dbHistoryCache);
+      return;
+    }
+    const q = query.toLowerCase();
+    const filtered = dbHistoryCache.filter(e =>
+      (e.userMessage || '').toLowerCase().includes(q) ||
+      (e.aiResponse || '').toLowerCase().includes(q) ||
+      (e.inputType || '').toLowerCase().includes(q)
+    );
+    renderDbHistory(filtered);
+  }
+
+  function renderDbSkeleton() {
+    DOM.dbHistoryList.innerHTML = Array(4).fill(0).map(() => `
+      <div class="db-skeleton-card">
+        <div class="skel skel-top"></div>
+        <div class="skel skel-mid"></div>
+        <div class="skel skel-bot"></div>
+      </div>`).join('');
+  }
+
+  function getTypeEmoji(type) {
+    const map = { audio: '🎙️', file: '📄', text: '💬', image: '🖼️' };
+    return map[type] || '💬';
+  }
+
+  function truncate(str, len) {
+    return str.length > len ? str.substring(0, len) + '…' : str;
+  }
+
+  function formatDbTime(isoString) {
+    if (!isoString) return '—';
+    try {
+      const d = new Date(isoString);
+      const today = new Date();
+      const isToday = d.toDateString() === today.toDateString();
+      if (isToday) return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+        d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    } catch { return '—'; }
   }
 
   function toggleSidebar() {
